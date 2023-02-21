@@ -1,0 +1,76 @@
+version: "3.3"
+
+services:
+  # mysql:
+  #   image: mysql:8.0.31
+  #   restart: always
+  #   command: --default-authentication-plugin=mysql_native_password
+  #   ports:
+  #     - ${DATABASE_PORT}:3306
+  #   environment:
+  #     MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+  #     MYSQL_DATABASE: ${DATABASE_NAME}
+  #     MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+
+  # boilerplate:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   expose:
+  #     - ${APP_PORT}
+  #   depends_on:
+  #     - mysql
+  #   ports:
+  #     - ${APP_PORT}:${APP_PORT}
+  apmserver:
+    image: docker.elastic.co/apm/apm-server:7.13.0
+    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+    cap_drop: ["ALL"]
+    ports:
+    - 8200:8200
+    command: >
+       apm-server -e
+         -E apm-server.rum.enabled=true
+         -E setup.kibana.host=kibana:5601
+         -E setup.template.settings.index.number_of_replicas=0
+         -E apm-server.kibana.enabled=true
+         -E apm-server.kibana.host=kibana:5601
+         -E output.elasticsearch.hosts=["elasticsearch:9200"]
+
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    volumes:
+      - ./infrastructure/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD}
+      discovery.type: single-node
+    restart: unless-stopped
+
+  kibana:
+    image: kibana:7.17.9
+    volumes:
+      - ./infrastructure/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+    ports:
+      - 5601:5601
+    environment:
+      KIBANA_SYSTEM_PASSWORD: ${KIBANA_SYSTEM_PASSWORD}
+    depends_on:
+      - elasticsearch
+    restart: unless-stopped
+
+  otel-collector:
+    image: otel/opentelemetry-collector
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./infrastructure/otel-collector-config.yml:/etc/otel-collector-config.yml:ro,Z
+    ports:
+      - "1888:1888"
+      - "8888:8888"
+      - "8889:8889"
+      - "13133:13133"
+      - "4318:4318"

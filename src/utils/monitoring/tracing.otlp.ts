@@ -1,32 +1,22 @@
-"use strict";
-
-const {
-  BasicTracerProvider,
-  ConsoleSpanExporter,
-  SimpleSpanProcessor,
-} = require("@opentelemetry/tracing");
-const { OTLPTraceExporter } = require("@opentelemetry/exporter-trace-otlp-http");
-const { Resource } = require("@opentelemetry/resources");
-const {
-  SemanticResourceAttributes,
-} = require("@opentelemetry/semantic-conventions");
-
-const opentelemetry = require("@opentelemetry/sdk-node");
-const {
-  getNodeAutoInstrumentations,
-} = require("@opentelemetry/auto-instrumentations-node");
+import { Resource } from '@opentelemetry/resources';
+import { NodeTracerProvider, ConsoleSpanExporter } from'@opentelemetry/sdk-trace-node';
+import { SimpleSpanProcessor } from'@opentelemetry/sdk-trace-base';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
+import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions';
+import * as opentelemetry from '@opentelemetry/sdk-node';
+import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 
 export function setupAutoInstrumenting() {
   const exporter = new OTLPTraceExporter({
     url: "http://localhost:4318/v1/traces"
   });
 
-  const provider = new BasicTracerProvider({
+  const provider = new NodeTracerProvider({
     resource: new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]:
-        "YOUR-SERVICE-NAME",
+      [SemanticResourceAttributes.SERVICE_NAME]: process.env.APP_NAME,
     }),
   });
+
   // export spans to console (useful for debugging)
   provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
   // export spans to opentelemetry collector

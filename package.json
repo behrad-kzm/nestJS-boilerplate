@@ -46,7 +46,6 @@
     "@opentelemetry/resources": "^1.9.1",
     "@opentelemetry/sdk-node": "^0.35.1",
     "@opentelemetry/semantic-conventions": "^1.9.1",
-    "@opentelemetry/tracing": "^0.24.0",
     "@sendgrid/mail": "^7.7.0",
     "@types/bcrypt": "^5.0.0",
     "awesome-phonenumber": "^4.1.0",

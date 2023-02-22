@@ -15,6 +15,8 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UserService } from '../user/user.service';
 import { AppError } from '../../utils/common/app-error';
 import { isPhoneNumber } from 'class-validator';
+import axios from '../../utils/common/axios';
+import * as opentelemetry from '@opentelemetry/sdk-node';
 
 @Injectable()
 export class AuthService {
@@ -29,6 +31,27 @@ export class AuthService {
     private userService: UserService,
   ) { }
 
+  async count() {
+    const res = await this.ottRepository.count({
+
+    });
+    const key = opentelemetry.api.createContextKey("My-Custom-Context-Key");
+    console.log("context value",opentelemetry.api.context.active().getValue(key));
+    return res;
+  }
+
+  async restRequest(){
+    try {
+      const res = await axios({
+        method: 'get',
+        url: 'https://run.mocky.io/v3/193993be-2e71-4bb0-955e-eafbe43379e3'
+        });
+      return res.data;
+    } catch {
+      return "Err"
+    }
+    
+  }
   async adminLogin(loginDto: AuthEmailLoginDto): Promise<{ token: string; refreshToken: string; admin: { email: string; } }> {
    
     const admin = await this.adminService.findOne({

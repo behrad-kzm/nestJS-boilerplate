@@ -11,7 +11,7 @@ import { setupAutoInstrumenting } from './utils/monitoring/tracing.otlp';
 
 async function bootstrap() {
   
-  setupAutoInstrumenting();
+  await setupAutoInstrumenting();
   const app = await NestFactory.create(AppModule, { cors: true });
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
   const configService = app.get(ConfigService);

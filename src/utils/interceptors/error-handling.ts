@@ -12,12 +12,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
     const status = exception.getStatus();
     try {
-      await Logger.logResponseError({
-        exception,
-        isCritical: status >= 500,
-        status,
-        url: request.url,
-      });
+      // await Logger.logResponseError({
+      //   exception,
+      //   isCritical: status >= 500,
+      //   status,
+      //   url: request.url,
+      // });
     } catch (error) {
       // nothing to do!
     }

@@ -13,7 +13,6 @@ RUN sed -i 's/\r//g' /opt/wait-for-it.sh
 RUN sed -i 's/\r//g' /opt/startup.dev.sh
 
 WORKDIR /usr/src/app
-RUN rm -rf .env && cp env-config .env
 RUN npm run build
 
 CMD ["/bin/bash", "/opt/startup.dev.sh"]

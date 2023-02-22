@@ -62,6 +62,7 @@
     "multer-s3": "^3.0.1",
     "mysql2": "^2.3.3",
     "nestjs-i18n": "^9.2.1",
+    "opentelemetry-resource-detector-git": "^0.28.0",
     "passport": "^0.6.0",
     "passport-anonymous": "^1.0.1",
     "passport-jwt": "^4.0.0",

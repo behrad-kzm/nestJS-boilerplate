@@ -26,10 +26,11 @@ export async function setupAutoInstrumenting() {
   api.context.setGlobalContextManager(contextManager);
 
   const provider = new NodeTracerProvider({
-    resource: new Resource({
-      [SemanticResourceAttributes.SERVICE_NAME]: process.env.APP_NAME,
-      ...resource.attributes
-    }),
+    resource: resource.merge(
+      new Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: process.env.APP_NAME,
+      })
+    ),
   });
 
   // export spans to console (useful for debugging)

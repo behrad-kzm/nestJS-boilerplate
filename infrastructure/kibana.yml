@@ -1,13 +1,13 @@
 server.name: kibana
 server.host: 0.0.0.0
-elasticsearch.hosts: [ http://elasticsearch:9200 ]
+elasticsearch.url: "http://elasticsearch:9200"
 
-monitoring.ui.container.elasticsearch.enabled: true
+# monitoring.ui.container.elasticsearch.enabled: trfalseue
 
 ## X-Pack security credentials
 #
-elasticsearch.username: kibana_system
-elasticsearch.password: ${KIBANA_SYSTEM_PASSWORD}
+# elasticsearch.username: kibana_system
+# elasticsearch.password: ${KIBANA_SYSTEM_PASSWORD}
 
 ## Fleet
 ## https://www.elastic.co/guide/en/kibana/current/fleet-settings-kb.html

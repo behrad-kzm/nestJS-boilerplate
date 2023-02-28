@@ -9,8 +9,12 @@ export class TelemetryMiddleware implements NestMiddleware {
         const key = opentelemetry.api.createContextKey("My-Custom-Context-Key");
         console.log(opentelemetry.api.context.active().getValue(key));
         opentelemetry.api.trace.getActiveSpan().addEvent(
-            "SALAM"
-        )
+            "APMFUN"
+        );
+        
+        const counter = opentelemetry.api.metrics.getMeter("MetricFun").createCounter("CounterFun");
+        counter.add(50, { 'kif2': 'ketab2' });
+
         opentelemetry.api.context.with(ctx.setValue(key, 'Chert-Value'), async () => {
             const key = opentelemetry.api.createContextKey("My-Custom-Context-Key");
             console.log("inner", opentelemetry.api.context.active().getValue(key));
@@ -28,6 +32,7 @@ export class TelemetryMiddleware implements NestMiddleware {
             opentelemetry.api.trace.setSpan(opentelemetry.api.context.active(), span);
             span.setAttribute('route', req.url);
             span.addEvent("Birthdate",{"attr": "gole mohammadi"})
+            
             next();
             span.end()
         });

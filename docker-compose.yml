@@ -1,6 +1,62 @@
 version: "3.3"
 
 services:
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+      - METRICS_STORAGE_TYPE=prometheus
+      - PROMETHEUS_SERVER_URL=http://prometheus:9090
+      - SPAN_STORAGE_TYPE=elasticsearch
+      - ES_SERVER_URLS=http://elasticsearch:9200
+    depends_on:
+      - elasticsearch
+    restart: always
+    ports:
+      - 16686:16686
+      - 4317:4317
+
+  otel-collector:
+    image: otel/opentelemetry-collector
+    command: ["--config=/etc/otel-collector-config.yml"]
+    volumes:
+      - ./infrastructure/otel-collector-config.yml:/etc/otel-collector-config.yml:ro,Z
+    ports:
+      - "14278:14278"
+      - "4318:4318"
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./infrastructure/prometheus.yml:/etc/prometheus/prometheus.yml:ro,Z
+    ports:
+      - "9090:9090"
+      
+  elasticsearch:
+    image: elasticsearch:7.17.9
+    volumes:
+      - ./infrastructure/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
+    ports:
+      - 9200:9200
+      - 9300:9300
+    environment:
+      node.name: elasticsearch
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+    restart: unless-stopped
+
+  kibana:
+    image: kibana:7.17.9
+    volumes:
+      - ./infrastructure/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
+    ports:
+      - 5601:5601
+    environment:
+      - xpack.security.enabled=false
+      - xpack.ml.enabled=false
+    restart: unless-stopped
+
   # mysql:
   #   image: mysql:8.0.31
   #   restart: always
@@ -12,21 +68,47 @@ services:
   #     MYSQL_DATABASE: ${DATABASE_NAME}
   #     MYSQL_PASSWORD: ${DATABASE_PASSWORD}
 
-  # boilerplate:
+  # boilerplateTop:
   #   build:
   #     context: .
   #     dockerfile: Dockerfile
+  #   environment:
+  #     - NEXT_SERVICE_URL="boilerplateMiddle:3001"
   #   volumes:
   #     - ./env-config:/usr/src/app/.env:ro,Z
-  #   expose:
-  #     - ${APP_PORT}
   #   depends_on:
   #     - mysql
   #   ports:
-  #     - ${APP_PORT}:${APP_PORT}
+  #     - 3000:3000
+
+  # boilerplateMiddle:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     - NEXT_SERVICE_URL="boilerplateMiddle:3002"
+  #   volumes:
+  #     - ./env-config:/usr/src/app/.env:ro,Z
+  #   depends_on:
+  #     - mysql
+  #   ports:
+  #     - 3001:3000
+  
+  # boilerplateBottom:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     - NEXT_SERVICE_URL=""
+  #   volumes:
+  #     - ./env-config:/usr/src/app/.env:ro,Z
+  #   depends_on:
+  #     - mysql
+  #   ports:
+  #     - 3002:3000
 
   # apmserver:
-  #   image: docker.elastic.co/apm/apm-server:7.13.0
+  #   image: docker.elastic.co/apm/apm-server:7.17.9
   #   cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
   #   cap_drop: ["ALL"]
   #   ports:
@@ -36,35 +118,26 @@ services:
   #        -E apm-server.rum.enabled=true
   #        -E setup.kibana.host=kibana:5601
   #        -E setup.template.settings.index.number_of_replicas=0
-  #        -E apm-server.kibana.enabled=truedocker ps
+  #        -E apm-server.kibana.enabled=true
   #        -E apm-server.kibana.host=kibana:5601
   #        -E output.elasticsearch.hosts=["elasticsearch:9200"]
+  #   restart: always
 
-  jaeger:
-    image: jaegertracing/all-in-one
-    ports:
-      - 16686:16686
-      - 4317:4317
-    environment:
-      - COLLECTOR_OTLP_ENABLED=true
-      # - METRICS_STORAGE_TYPE=elasticsearch
-      - SPAN_STORAGE_TYPE=elasticsearch
-      - ES_SERVER_URLS=http://elasticsearch:9200
-    depends_on:
-      - elasticsearch
 
-  elasticsearch:
-    image: elasticsearch:6.4.0
-    volumes:
-      - ./infrastructure/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro,Z
-    ports:
-      - 9200:9200
-      - 9300:9300
-    environment:
-      node.name: elasticsearch
-      ES_JAVA_OPTS: -Xms512m -Xmx512m
-      discovery.type: single-node
-    restart: unless-stopped
+  # jaeger:
+  #   image: jaegertracing/all-in-one
+  #   ports:
+  #     - 16686:16686
+  #     - 4317:4317
+  #   environment:
+  #     - COLLECTOR_OTLP_ENABLED=true
+  #     - METRICS_STORAGE_TYPE=prometheus
+  #     - PROMETHEUS_SERVER_URL=http://prometheus:9090
+  #     - SPAN_STORAGE_TYPE=elasticsearch
+  #     - ES_SERVER_URLS=http://elasticsearch:9200
+  #   depends_on:
+  #     - elasticsearch
+  #   restart: always
 
   # jaeger-collector:
   #   image: jaegertracing/jaeger-collector
@@ -124,27 +197,3 @@ services:
   #   ]
   #   depends_on:
   #     - jaeger-agent
-
-
-  kibana:
-    image: kibana:6.4.0
-    volumes:
-      - ./infrastructure/kibana.yml:/usr/share/kibana/config/kibana.yml:ro,Z
-    ports:
-      - 5601:5601
-    environment:
-      - xpack.security.enabled=false
-      - xpack.ml.enabled=false
-    restart: unless-stopped
-
-  otel-collector:
-    image: otel/opentelemetry-collector
-    command: ["--config=/etc/otel-collector-config.yml"]
-    volumes:
-      - ./infrastructure/otel-collector-config.yml:/etc/otel-collector-config.yml:ro,Z
-    ports:
-      - "1888:1888"
-      - "8888:8888"
-      - "8889:8889"
-      - "13133:13133"
-      - "4318:4318"

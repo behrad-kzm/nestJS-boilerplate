@@ -32,9 +32,7 @@ export class AuthService {
   ) { }
 
   async count() {
-    const res = await this.ottRepository.count({
-
-    });
+    const res = await this.ottRepository.count({ });
     const key = opentelemetry.api.createContextKey("My-Custom-Context-Key");
     console.log("context value",opentelemetry.api.context.active().getValue(key));
     return res;
@@ -45,12 +43,11 @@ export class AuthService {
       const res = await axios({
         method: 'get',
         url: 'https://run.mocky.io/v3/193993be-2e71-4bb0-955e-eafbe43379e3'
-        });
+      });
       return res.data;
     } catch {
       return "Err"
     }
-    
   }
   async adminLogin(loginDto: AuthEmailLoginDto): Promise<{ token: string; refreshToken: string; admin: { email: string; } }> {
    

@@ -15,7 +15,7 @@ import { AsyncHooksContextManager } from '@opentelemetry/context-async-hooks';
 export async function setupAutoInstrumenting() {
 
   const exporter = new OTLPTraceExporter({
-    url: "http://localhost:4318/v1/traces"
+    url:  `${process.env.OTEL_COLLECTOR_URL}/v1/traces`
   });
 
   const resource = await detectResources({
@@ -32,7 +32,7 @@ export async function setupAutoInstrumenting() {
   const traceProvider = new NodeTracerProvider({
     resource: resource.merge(
       new Resource({
-        [SemanticResourceAttributes.SERVICE_NAME]: process.env.APP_NAME,
+        [SemanticResourceAttributes.SERVICE_NAME]: process.env.SERVICE_NAME,
       })
     ),
   });
@@ -47,12 +47,18 @@ export async function setupAutoInstrumenting() {
   //////////////////////////////////////////////////////////////////
   // METRICS:
   const metricExporter = new OTLPMetricExporter({
-    url: 'http://localhost:4318/v1/metrics',
+    url: `${process.env.OTEL_COLLECTOR_URL}/v1/metrics`,
     headers: {}, 
     concurrencyLimit: 1,
   });
   
-  const meterProvider = new MeterProvider({});
+  const meterProvider = new MeterProvider({
+    resource: resource.merge(
+      new Resource({
+        [SemanticResourceAttributes.SERVICE_NAME]: process.env.SERVICE_NAME,
+      })
+    ),
+  });
   
   meterProvider.addMetricReader(new PeriodicExportingMetricReader({
     exporter: metricExporter,

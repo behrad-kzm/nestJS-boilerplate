@@ -39,14 +39,29 @@ export class AuthService {
   }
 
   async restRequest(){
+    const nextUrl = this.configService.get('app.nextServiceUrl');
+    if (!nextUrl) {
+      opentelemetry.api.trace.getActiveSpan().addEvent('FINISHED', {
+        date: new Date().toISOString()
+      })
+      return {
+        response: 'finished'
+      }
+    }
     try {
+      console.log('THELOG', `${nextUrl}/api/v1/auth/restCall`)
       const res = await axios({
         method: 'get',
-        url: 'https://run.mocky.io/v3/193993be-2e71-4bb0-955e-eafbe43379e3'
+        url: `${nextUrl}/api/v1/auth/restCall`
       });
       return res.data;
-    } catch {
-      return "Err"
+    } catch (error)
+    {
+      console.log('YOOOOOOOOOO', error)
+      return {
+        err: error,
+        
+      }
     }
   }
   async adminLogin(loginDto: AuthEmailLoginDto): Promise<{ token: string; refreshToken: string; admin: { email: string; } }> {

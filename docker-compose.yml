@@ -25,6 +25,7 @@ services:
     ports:
       - "14278:14278"
       - "4318:4318"
+      - "8889:8889"
 
   prometheus:
     image: prom/prometheus:latest
@@ -57,55 +58,69 @@ services:
       - xpack.ml.enabled=false
     restart: unless-stopped
 
-  # mysql:
-  #   image: mysql:8.0.31
-  #   restart: always
-  #   command: --default-authentication-plugin=mysql_native_password
-  #   ports:
-  #     - ${DATABASE_PORT}:3306
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
-  #     MYSQL_DATABASE: ${DATABASE_NAME}
-  #     MYSQL_PASSWORD: ${DATABASE_PASSWORD}
-
-  # boilerplateTop:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     - NEXT_SERVICE_URL="boilerplateMiddle:3001"
-  #   volumes:
-  #     - ./env-config:/usr/src/app/.env:ro,Z
-  #   depends_on:
-  #     - mysql
-  #   ports:
-  #     - 3000:3000
-
-  # boilerplateMiddle:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     - NEXT_SERVICE_URL="boilerplateMiddle:3002"
-  #   volumes:
-  #     - ./env-config:/usr/src/app/.env:ro,Z
-  #   depends_on:
-  #     - mysql
-  #   ports:
-  #     - 3001:3000
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:7.17.9
+    user: root
+    volumes:
+      - ./infrastructure/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml:ro,Z
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["--strict.perms=false", "-system.hostfs=/hostfs"]
   
-  # boilerplateBottom:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     - NEXT_SERVICE_URL=""
-  #   volumes:
-  #     - ./env-config:/usr/src/app/.env:ro,Z
-  #   depends_on:
-  #     - mysql
-  #   ports:
-  #     - 3002:3000
+  mysql:
+    image: mysql:8.0.31
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE_NAME}
+      MYSQL_PASSWORD: ${DATABASE_PASSWORD}
+
+  boilerplate-top:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SERVICE_NAME="API_TOP"
+      - NEXT_SERVICE_URL=http://boilerplate-middle:3000
+    volumes:
+      - ./env-config:/usr/src/app/.env:ro,Z
+    depends_on:
+      - mysql
+    ports:
+      - 3000:3000
+
+  boilerplate-middle:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SERVICE_NAME="API_MIDDLE"
+      - NEXT_SERVICE_URL=http://boilerplate-bottom:3000
+    volumes:
+      - ./env-config:/usr/src/app/.env:ro,Z
+    depends_on:
+      - mysql
+    ports:
+      - 3001:3000
+  
+  boilerplate-bottom:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - SERVICE_NAME="API_BOTTOM"
+      - NEXT_SERVICE_URL=
+    volumes:
+      - ./env-config:/usr/src/app/.env:ro,Z
+    depends_on:
+      - mysql
+    ports:
+      - 3002:3000
 
   # apmserver:
   #   image: docker.elastic.co/apm/apm-server:7.17.9

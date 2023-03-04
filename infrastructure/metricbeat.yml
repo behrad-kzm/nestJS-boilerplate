@@ -1,0 +1,13 @@
+metricbeat.modules:
+- module: prometheus
+  period: 10s
+  metricsets: ["collector"]
+  hosts: ["prometheus:9090"]
+  metrics_path: /metrics
+
+processors:
+  - add_cloud_metadata: ~
+setup.kibana:
+  host: 'kibana:5601'
+output.elasticsearch:
+  hosts: 'elasticsearch:9200'

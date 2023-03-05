@@ -1,6 +1,28 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as opentelemetry from '@opentelemetry/sdk-node';
+function generateNumber(min: number, max: number) {
+    if (min > max) {
+        throw new Error('Minimum value should be smaller than maximum value.');
+    }
+    var range = max - min;
+    return min + range * Math.random();
+};
+
+function calculateFunJokes(result: opentelemetry.api.ObservableResult) {
+
+    result.observe(generateNumber(1,2), {
+        jokeName: "programming jokes"
+    });
+
+    result.observe(generateNumber(10,25), {
+        jokeName: "family jokes"
+    });
+
+    result.observe(generateNumber(100,250), {
+        jokeName: "+18 jokes"
+    });
+}
 
 @Injectable()
 export class TelemetryMiddleware implements NestMiddleware {
@@ -11,9 +33,17 @@ export class TelemetryMiddleware implements NestMiddleware {
         opentelemetry.api.trace.getActiveSpan().addEvent(
             "APMFUN"
         );
-        
+
         const counter = opentelemetry.api.metrics.getMeter("MetricFun").createCounter("CounterFun");
         counter.add(50, { 'kif2': 'ketab2' });
+
+
+        const randomizedGauge = opentelemetry.api.metrics.getMeter("MetricFun").createObservableGauge("GaugeFun", {
+            description: "this gauge made for fun",
+            unit: "liter",
+            valueType: opentelemetry.api.ValueType.DOUBLE,
+        });
+        randomizedGauge.addCallback(calculateFunJokes)
 
         opentelemetry.api.context.with(ctx.setValue(key, 'Chert-Value'), async () => {
             const key = opentelemetry.api.createContextKey("My-Custom-Context-Key");
@@ -38,3 +68,4 @@ export class TelemetryMiddleware implements NestMiddleware {
         });
   }
 }
+
